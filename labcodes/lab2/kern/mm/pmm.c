@@ -5,7 +5,11 @@
 #include <mmu.h>
 #include <memlayout.h>
 #include <pmm.h>
+// qxr: change begin
 #include <default_pmm.h>
+#include <buddy_system.h>
+#include <buddysys_pmm.h>
+// qxr: change end
 #include <sync.h>
 #include <error.h>
 
@@ -44,6 +48,7 @@ uintptr_t boot_cr3;
 
 // physical memory management
 const struct pmm_manager *pmm_manager;
+
 
 /* *
  * The page directory entry corresponding to the virtual address range
@@ -137,7 +142,11 @@ gdt_init(void) {
 //init_pmm_manager - initialize a pmm_manager instance
 static void
 init_pmm_manager(void) {
-    pmm_manager = &default_pmm_manager;
+    // qxr: change begin
+    //pmm_manager = &default_pmm_manager;
+    pmm_manager = &buddy_system;
+    //pmm_manager = &buddysys_pmm_manager;
+    // qxr: change end
     cprintf("memory management: %s\n", pmm_manager->name);
     pmm_manager->init();
 }
@@ -232,6 +241,8 @@ page_init(void) {
                 begin = ROUNDUP(begin, PGSIZE);
                 end = ROUNDDOWN(end, PGSIZE);
                 if (begin < end) {
+                    cprintf("begin addr is: %llx\n", begin);
+                    cprintf("size is: %llx\n", (end - begin) / PGSIZE);
                     init_memmap(pa2page(begin), (end - begin) / PGSIZE);
                 }
             }
@@ -363,9 +374,9 @@ get_pte(pde_t *pgdir, uintptr_t la, bool create) {
         memset(KADDR(pa), 0, sizeof(struct Page)); // (6) clear page content using memset
         *pdep = pa | PTE_P | PTE_W | PTE_U; // (7) set page directory entry's permission
     }
-    return &((pte_t *)KADDR(PDE_ADDR(*pdep)))[PTX(la)];   //DJL:  pdep is actually la， should return va
+    return (pte_t*)KADDR((PDE_ADDR(*pdep)))+PTX(la); //SYD: maybe more easily to understand
+    //return &((pte_t *)KADDR(PDE_ADDR(*pdep)))[PTX(la)];   //DJL:  pdep is actually la， should return va
                     // (8) return page table entry
-
 }
 
 //get_page - get related Page struct for linear address la using PDT pgdir
@@ -413,17 +424,17 @@ page_remove_pte(pde_t *pgdir, uintptr_t la, pte_t *ptep) {
 #endif
     //pte_t *ptep = get_pte(pgdir, la, 0);
     //cprintf("enter page_remove_pte\n");
-    if((*ptep) & PTE_P)              //(1) check if this page table entry is present
+    if((*ptep) & PTE_P)                         //(1) check if this page table entry is present
     {
-        struct Page *page = pte2page(*ptep); //(2) find corresponding page to pte
-        page_ref_dec(page);                 //(3) decrease page reference
+        struct Page *page = pte2page(*ptep);    //(2) find corresponding page to pte
+        page_ref_dec(page);                     //(3) decrease page reference
         cprintf("%d\n", page_ref(page));
-        if (page_ref(page) == 0)            //(4) and free this page when page reference reachs 0
+        if (page_ref(page) == 0)                //(4) and free this page when page reference reachs 0
         {
             free_page(page);
         }
-        *ptep = 0; //(5) clear second page table entry
-        tlb_invalidate(pgdir,la);           //(6) flush tlb
+        *ptep = 0;                              //(5) clear second page table entry
+        tlb_invalidate(pgdir,la);               //(6) flush tlb
     }
     
 }
