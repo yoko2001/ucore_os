@@ -3,7 +3,7 @@
 #include <string.h>
 #include <default_pmm.h>
 #include <buddysys_pmm.h>
-
+#include <stdio.h>
 #define lson(i) ((i)<<1)
 #define rson(i) ((i)<<1|1)
 #define fath(i) ((i)>>1)
@@ -244,17 +244,18 @@ buddysys_check(void) {
     cprintf("B %p\n",B);
 
     cprintf("now free 250 pages to A, 500 pages to B, 250 pages to A+250:\n");
-    free_pages(A,250);
+   
+    free_pages(A,250); //SYD COMMENT 
     // ===FREE===|==(256)A==|=====500(512)B===== 
     free_pages(B,500);
     // ===FREE===|==(256)A==|=======FREE======== 
-    free_pages(A+250,250);
+    free_pages(A+250,250); //SYD COMMENT
     // ==============FREE=======================
     cprintf("if process right, the pages shall all br free!\n");
     
     p0=alloc_pages(1024);
-    //  ================p0======================
-    // cprintf("allocate 1024 pages to p0, because all pages are free, the pointer p0 must equal to A!\n");
+    // //  ================p0======================
+    // cprintf("allocate 1024 pages to p0, because all pages are free, the pointer p0 must eqgitual to A!\n");
     // cprintf("p0 %p\n",p0);
     // assert(p0 == A);
 
@@ -283,6 +284,9 @@ buddysys_check(void) {
     // free_pages(D,60);
     // cprintf("C %p\n",C);
     // free_pages(C,80);
+
+
+
     // //  =====FREE=====|====FREE===|====FREE====|=========FREE==========|=========free==========
     free_pages(p0,1000);//全部释放
     //  ========================================FREE===========================================

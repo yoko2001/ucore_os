@@ -368,11 +368,11 @@ get_pte(pde_t *pgdir, uintptr_t la, bool create) {
         else return NULL;
                                             // CAUTION: this page is used for page table, not for common data page
         set_page_ref(page, 1);              // (4) set page reference
-        uintptr_t pa = page2pa(page);       // (5) get linear address of page
+        uintptr_t pa = page2pa(page);       // (5) get PHYSICAL address of page
         //DJL KADDR is rebased with KERNBASE,locates from 0xC0000000
         //DJL maybe is related to exe3's challenge
-        memset(KADDR(pa), 0, sizeof(struct Page)); // (6) clear page content using memset
-        *pdep = pa | PTE_P | PTE_W | PTE_U; // (7) set page directory entry's permission
+        memset(KADDR(pa), 0, PGSIZE); // (6) clear page content using memset
+        *pdep = pa | PTE_P | PTE_W | PTE_U; //(7) set page directory entry's permission //!!physical addr & symbol bits
     }
     return (pte_t*)KADDR((PDE_ADDR(*pdep)))+PTX(la); //SYD: maybe more easily to understand
     //return &((pte_t *)KADDR(PDE_ADDR(*pdep)))[PTX(la)];   //DJL:  pdep is actually la， should return va

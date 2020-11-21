@@ -9,6 +9,7 @@
 #include <intr.h>
 #include <pmm.h>
 #include <kmonitor.h>
+#include <slub.h>
 
 int kern_init(void) __attribute__((noreturn));
 void grade_backtrace(void);
@@ -29,6 +30,7 @@ kern_init(void) {
     grade_backtrace();
 
     pmm_init();                 // init physical memory management
+    kmem_cache_init();          // init slub 
 
     pic_init();                 // init interrupt controller
     idt_init();                 // init interrupt descriptor table
